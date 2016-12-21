@@ -5,6 +5,7 @@ LDFLAGS+= -L./lib
 LDFLAGS+= -lpthread
 LDFLAGS+= -lm
 LDFLAGS+= -lrt
+LDFLAGS+= -lpcap
 
 CFLAGS+=-I./inc
 CFLAGS+=-I./include

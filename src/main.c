@@ -20,6 +20,8 @@
 
 #include "report_thread.h"
 
+#include "handler_packet.h"
+
 #define DEFAULT_CONFIG_FILE	"/root/Github/WORK/Flow-classification/etc/flow_cfg.json"
 
 
@@ -136,12 +138,13 @@ int main(int argc,char *argv[])
 	}
 
 	net_buff_t *tmp = NULL;
-	net_buff_t *tmp2 = NULL;
 	int buff_size = 1024;
-	while(buff_size < 4096)
+
+	while(1)
 	{
 		sleep(5);
 		printf("[Main Thread]----------------->\n");
+		/*
 		tmp = new_net_buff(buff_size);
 		if(tmp != NULL)
 		{
@@ -152,17 +155,9 @@ int main(int argc,char *argv[])
 				fprintf(stderr,"[ERROR] Add buff to queue Fail\n");
 			}
 		}
-		/*
-		tmp2 = net_get_buff(g_net_queue);
-		printf("tmp2 %p \n",tmp2);
-		printf("-------------\n");
-
-		if(tmp2 != NULL) {
-			printf("buff size [%d] --> %s\n",tmp2->size,tmp2->buff);
-		}
 		*/
 
-
+		mt_pcap_capture("eth0","tcp port 12080");
 
 		
 	}

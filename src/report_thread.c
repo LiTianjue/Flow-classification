@@ -36,8 +36,8 @@ void *report_thread(void *arg)
 	net_buff_t *current_pack = NULL;
 	while(1)
 	{
-		sleep(6);
-		printf("[Report Thread]------------------>\n");
+		usleep(200);
+		//printf("[Report Thread]------------------>\n");
 		
 		// [2.1] 从队列中取出一个数据包
 		// [2.2] 解析数据包并按协议格式封装数据 src dst time_stamp
@@ -52,7 +52,7 @@ void *report_thread(void *arg)
 		{	
 			if(ret == -1)
 			{
-				//如果tcp连接断开就需要不断的重连
+			 	//如果tcp连接断开就需要不断的重连
 				close(remote_sock);
 				remote_sock = -1;
 				while(remote_sock < 0)
@@ -68,7 +68,7 @@ void *report_thread(void *arg)
 		current_pack = net_get_buff(g_net_queue);
 		if(current_pack == NULL)
 		{
-			fprintf(stderr,"Error on Get buff.\n");
+			//fprintf(stderr,"Error on Get buff.\n");
 		}
 		else
 		{
