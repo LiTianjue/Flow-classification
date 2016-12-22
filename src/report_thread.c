@@ -5,6 +5,11 @@
 #include <string.h>
 
 #include "common.h"
+#include "handler_packet.h"
+#include "report_thread.h"
+#include "socket_helper.h"
+
+#define DF_TIMEOUT	5
 
 
 int reconnect(char *ip,int port,int timeout)
@@ -24,57 +29,84 @@ int send_pack_by_timeout(int remote_sock,char *data,int data_len,int timeout)
 
 void *report_thread(void *arg)
 {
+	pthread_detach(pthread_self());
+
+	r_thread_info_t *r_info;
+	r_info = (r_thread_info_t *)arg;
+
 	int ret=0;
-	char *ip = "127.0.0.1";
-	int port = 9199;
+	char ip[32] ={0};
+	int port = 0;
+
+
+	strcpy(ip,r_info->report_ip);
+	port = r_info->report_port;
 
 	char data[4096] = {0};
 	int data_len;
-	// [1] Create a tcp client to server
-	int remote_sock = reconnect(ip,port,5);
-	// [2] start a loop to receive netPacket
+	int remote_sock = -1;
 	net_buff_t *current_pack = NULL;
+	int is_empty = 0;
+
+	//  start a loop to receive netPacket
+	//printf("[Report Thread]------------------>\n");
 	while(1)
 	{
-		usleep(200);
-		//printf("[Report Thread]------------------>\n");
-		
-		// [2.1] 从队列中取出一个数据包
-		// [2.2] 解析数据包并按协议格式封装数据 src dst time_stamp
-		ret = get_a_pack_by_timeout();
-		if(ret < 0)
-		{
-			//handle error;
-		}
-		// [2.3]
-		ret = send_pack_by_timeout(remote_sock,data,data_len,5);
-		if(ret < 0)	//handle error
-		{	
-			if(ret == -1)
-			{
-			 	//如果tcp连接断开就需要不断的重连
-				close(remote_sock);
-				remote_sock = -1;
-				while(remote_sock < 0)
-				{
-					remote_sock = reconnect(ip,port,5);
-				}
-			}else
-			{
-				//处理其他发送错误
-			}
+		if(is_empty)
+			usleep(200);
 
+		// [1] Create a tcp client to server
+		if(remote_sock <=0 ){
+			remote_sock = mite_sock_openSocketByTimeout(ip,port,DF_TIMEOUT);
+			printf("open remote[%s:%d] socket %d\n",ip,port,remote_sock);
+			if(remote_sock == -3)
+				sleep(DF_TIMEOUT);
+			continue;
 		}
+
+
 		current_pack = net_get_buff(g_net_queue);
 		if(current_pack == NULL)
 		{
 			//fprintf(stderr,"Error on Get buff.\n");
-		}
-		else
+			is_empty = 1;
+			continue;
+		}else
+			is_empty = 0;
+
+		
+		/*
+		 *	send tcp packet
+		 *
+		 *
+		 *
+		 */
+
+
+		if(0)	//debug
 		{
-			printf("buff size[%d] --> %s\n",current_pack->size,current_pack->buff);
-			del_net_buff(current_pack);
+			struct mt_pkthdr *mtpkt;
+			mtpkt = (struct mt_pkthdr *)(current_pack->buff);
+			printf("version :%02x\n",mtpkt->version);
+			printf("total_len :%04x\n",mtpkt->total_len);
+			printf("src :%08x\n",mtpkt->src_ip);
+			printf("src_port :%0tx\n",mtpkt->src_port);
+			printf("timestamp : %d\n",mtpkt->timestamp);
+
 		}
+
+		// ---------------- send --------------------------
+
+		printf("write to reomot %d bytes\n",current_pack->size);
+		ret = mite_sock_writeWithTimeout(remote_sock,current_pack->buff,current_pack->size,DF_TIMEOUT);
+
+		if(ret != 0)	//handle error
+		{	
+			printf("Close it \n");
+			close(remote_sock);
+			remote_sock = -1;
+		}
+
+		del_net_buff(current_pack);
 	}
-	
 }

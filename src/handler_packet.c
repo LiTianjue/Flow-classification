@@ -5,9 +5,13 @@
 #include <netinet/udp.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
+#include <time.h>
 
 #include "mite_pcap_netheadr.h"
 #include "net_buff_queue.h"
+
+#include "handler_packet.h"
+
 #include "common.h"
 
 
@@ -174,7 +178,7 @@ net_buff_t *parse_pkt(const struct pcap_pkthdr* pkthdr, const u_char* packet)
     u_char *data;
     int dataLength = 0;
 
-    //取出以太网头，看是不是IP协议包
+	//取出以太网头，看是不是IP协议包
 	ethernetHeader = (struct ether_header*)packet;
 
 	if(ntohs(ethernetHeader->ether_type) == ETHERTYPE_IP) {
@@ -196,22 +200,54 @@ net_buff_t *parse_pkt(const struct pcap_pkthdr* pkthdr, const u_char* packet)
 				if(dataLength >0)
 				{
 
-                printf("[%s:%d]-->[%s:%d]  datalen=[%d]\n",
-                       sourceIp,sourcePort,destIp,destPort,dataLength);
-				/*
-				 *
-				 *	the really work here
-				 *
-				 */
-				ret = new_net_buff(pkthdr->len+21);
-				if(ret == NULL)
-					return ret;
+					printf("[%s:%d]-->[%s:%d]  datalen=[%d]\n",
+							sourceIp,sourcePort,destIp,destPort,dataLength);
+					/*
+					 *
+					 *	the really work here
+					 *
+					 */
 
-				sprintf(ret->buff,"hello [%d]\n", pkthdr->len);
-				if(net_add_buff(g_net_queue,ret) != 0 )
-				{
-					fprintf(stderr,"add net buff error.\n");
-				}
+					//使用常用的网络地址结构，4字节表示ip地址，2字节表示端口号
+					//inet_addr() 转换后是网络字节序
+					struct mt_pkthdr mt_hd;
+
+					mt_hd.version = MT_VERSION;
+					mt_hd.total_len = pkthdr->len+21;
+					mt_hd.src_ip = inet_addr(sourceIp);
+					mt_hd.src_port = tcpHeader->source;
+					mt_hd.dst_ip = inet_addr(destIp);
+					mt_hd.dst_port = tcpHeader->dest;
+					mt_hd.timestamp = pkthdr->ts.tv_sec;
+
+
+					//printf("sizeof mt_hd is [%d] %02x %d\n ,",sizeof(mt_hd),mt_hd.version,mt_hd.total_len);
+					/*
+					   int timestamp = pkthdr->ts.tv_sec;
+					   printf("time stamp : %d [%d]\n",timestamp,sizeof(timestamp));
+					   int src_ip = inet_addr(sourceIp);
+					   printf("src_ip %08X\n",src_ip);
+					   */
+
+					ret = new_net_buff(pkthdr->len + sizeof(mt_hd) +2 );
+					//printf("packet len %d - %d - 2\n\n",pkthdr->len , sizeof(mt_hd));
+					if(ret == NULL)
+						return ret;
+
+					sprintf(ret->buff,"hello [%d]\n", pkthdr->len);
+					u_int16_t data_len = pkthdr->len;
+
+					//组装数据包
+					memcpy(ret->buff,&mt_hd,sizeof(mt_hd));
+					memcpy(ret->buff+sizeof(mt_hd),&data_len,2);
+					memcpy(ret->buff+sizeof(mt_hd)+2,packet,pkthdr->len);
+
+
+
+					if(net_add_buff(g_net_queue,ret) != 0 )
+					{
+						fprintf(stderr,"add net buff error.\n");
+					}
 				}
 			}
 

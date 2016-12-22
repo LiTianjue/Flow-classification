@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <pthread.h>
+#include <signal.h>
 
 #include "common.h"
 
@@ -44,6 +45,7 @@ net_buff_queue_t *g_net_queue;
 int main(int argc,char *argv[])
 {
 	//init pararms 读取配置文件
+	signal(SIGPIPE,SIG_IGN);
 
 
 #if 1
@@ -58,6 +60,8 @@ int main(int argc,char *argv[])
 
 		strcpy(polic_ip,json_getString(cfg_info,"polic_ip"));	
 		strcpy(report_ip,json_getString(cfg_info,"report_ip"));	
+		move_string_common(polic_ip);
+		move_string_common(report_ip);
 
 		char port[16];
 
@@ -103,7 +107,12 @@ int main(int argc,char *argv[])
 	if(1)	// 创建一个线程用于发送数据包
 	{
 		pthread_t report_tid;
-		if(pthread_create(&report_tid,NULL,report_thread,NULL))
+		r_thread_info_t *r_info;
+		r_info = (r_thread_info_t *)malloc(sizeof(r_thread_info_t));
+		strcpy(r_info->report_ip,report_ip);
+		r_info->report_port=report_port;
+
+		if(pthread_create(&report_tid,NULL,report_thread,(void *)r_info))
 		{
 			perror("[ERROR] pthread create report Fail.");
 		}
