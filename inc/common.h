@@ -15,7 +15,8 @@ typedef struct _prog_info_g
 {
 	MUTEX_TYPE lock;		//全局的线程锁
 
-	char BPF[MAX_BPF_LEN];
+	int isset;
+	char bpf[MAX_BPF_LEN];
 	int updata_flag;
 }prog_info_t;
 
@@ -54,5 +55,8 @@ static inline int move_string_common(char *str)
 	}
 	return 2;
 }
+
+int check_polic_ready();
+int get_polic(char *out);
 
 #endif

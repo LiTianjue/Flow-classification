@@ -20,6 +20,7 @@
 #include "json_handler.h"
 
 #include "report_thread.h"
+#include "polic_thread.h"
 
 #include "handler_packet.h"
 
@@ -38,8 +39,10 @@ char polic_ip[32] = {0};
 char report_ip[32] = {0};
 int  polic_port = 0;
 int  report_port = 0;
+char device[32] = {0};
 
 net_buff_queue_t *g_net_queue;
+prog_info_t		 *g_info = NULL;
 
 
 int main(int argc,char *argv[])
@@ -73,6 +76,8 @@ int main(int argc,char *argv[])
 		move_string_common(port);
 		report_port = atoi(port);
 		
+		strcpy(device,json_getString(cfg_info,"device"));	
+		move_string_common(device);
 	}
 	else
 	{
@@ -89,7 +94,17 @@ int main(int argc,char *argv[])
 	json_Delete(cfg_info);
 
 #endif
-	//MUTEX_SETUP(g_info->lock);
+	//创建一个全局的数据结构用于保存抓包策略
+	g_info = (prog_info_t *)malloc(sizeof(prog_info_t));
+	if(g_info == NULL)
+	{
+		printf("Init global info error.\n");
+		exit(-1);
+	}
+	g_info->isset = 0;
+	g_info->updata_flag = 0;
+	memset(g_info->bpf,'\0',MAX_BPF_LEN);
+	MUTEX_SETUP(g_info->lock);
 
 
 	//创建一个全局的队列用于接收和发送buff
@@ -101,7 +116,28 @@ int main(int argc,char *argv[])
 	}
 	
 
+	if(1)	//创建一个线程用于接受策略
+	{
+		pthread_t polic_tid;
+		p_thread_info_t *p_info;
+		p_info = (p_thread_info_t *)malloc(sizeof(p_thread_info_t));
+		strcpy(p_info->polic_ip,polic_ip);
+		p_info->polic_port=polic_port;
+		if(pthread_create(&polic_tid,NULL,polic_thread,(void *)p_info))
+		if(0)
+		{
+			perror("[ERROR] pthread create config Fail.");
+		}
+	}
 
+	//等待接收到配置策略
+	while(1)
+	{
+		sleep(5);
+		printf("wait_polic--->\n");
+		if(check_polic_ready())
+			break;
+	}
 
 	
 	if(1)	// 创建一个线程用于发送数据包
@@ -119,16 +155,6 @@ int main(int argc,char *argv[])
 
 	}
 
-	if(0)	//创建一个线程用于接受策略
-	{
-		pthread_t config_tid;
-		//if(pthread_create(&rabbit_tid,NULL,rabbitmq_reader_thread,NULL))
-		if(0)
-		{
-			perror("[ERROR] pthread create config Fail.");
-		}
-	}
-	
 	int ret;
 	char buff[2048];
 	//server_fds_t serverfds; 
@@ -149,6 +175,8 @@ int main(int argc,char *argv[])
 	net_buff_t *tmp = NULL;
 	int buff_size = 1024;
 
+	char polic[512] = {0};
+
 	while(1)
 	{
 		sleep(5);
@@ -165,8 +193,9 @@ int main(int argc,char *argv[])
 			}
 		}
 		*/
-
-		mt_pcap_capture("eth0","tcp port 12080");
+		get_polic(polic);
+		printf("get polic [%s]\n");
+		mt_pcap_capture(device,polic);
 
 		
 	}
