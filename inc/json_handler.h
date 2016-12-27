@@ -26,5 +26,6 @@ char *json_getString(JSON_INFO *info,char *key);
 
 int json_getBool(JSON_INFO *info,char *key);
 
+int json_getArraySize(JSON_INFO *info,char *key);
 
 #endif

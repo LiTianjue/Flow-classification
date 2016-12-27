@@ -26,6 +26,7 @@
 #include "common.h"
 #include "polic_thread.h"
 #include "json_handler.h"
+#include "cJSON.h"
 
 int polic_prase(int sockfd);
 int update_bpf(char *updata);
@@ -115,37 +116,56 @@ int polic_prase(int sockfd)
 	}
 
 	//json_Print(polic_info);
-#if 0
-	strcpy(src_ip,json_getString(polic_info,"src_ip"));
-	strcpy(src_port,json_getString(polic_info,"src_port"));
-	strcpy(dst_ip,json_getString(polic_info,"dst_ip"));
-	strcpy(dst_port,json_getString(polic_info,"dst_ip"));
-	
-	move_string_common(src_ip);
-	move_string_common(src_port);
-	move_string_common(dst_ip);
-	move_string_common(dst_port);
-#endif
 
-	strcpy(host,json_getString(polic_info,"host"));
-	strcpy(port,json_getString(polic_info,"port"));
 
-	move_string_common(host);
-	move_string_common(port);
-	printf("--------------> [%s:%s]\n",host,port);
-
-	if(strlen(host) >=4)
-	{
-		strcat(bfp,"host ");
-		strcat(bfp,host);
+	cJSON *polic = cJSON_GetObjectItem(polic_info->root,"polic");
+	if(polic == NULL) {
+		return -3;
 	}
-	if(atoi(port) > 0 && atoi(port) < 65535)
-	{
-		strcat(bfp," and port ");
-		strcat(bfp,port);
+	int polic_size = 0;
+	polic_size = cJSON_GetArraySize(polic);
+	if(polic_size <= 0){
+		return -4;
 	}
+	int i ;
+	for(i = 0; i < polic_size;i++)
+	{
+		char rule_item[64] = {0};
+		cJSON *item = cJSON_GetArrayItem(polic,i);
+		cJSON *json_host;
+		cJSON *json_port;
+		json_host = cJSON_GetObjectItem(item,"host");
+		json_port = cJSON_GetObjectItem(item,"port");
 
+		strcpy(host,cJSON_Print(json_host));
+		strcpy(port,cJSON_Print(json_port));
+
+		move_string_common(host);
+		move_string_common(port);
+		printf("--------------> [%s:%s]\n",host,port);
+
+		if(i != 0)
+			strcat(rule_item," or ");
+		strcat(rule_item,"(");
+		if(strlen(host) >=4)
+		{
+			strcat(rule_item,"host ");
+			strcat(rule_item,host);
+		}
+		if(atoi(port) > 0 && atoi(port) < 65535)
+		{
+			strcat(rule_item," and port ");
+			strcat(rule_item,port);
+		}
+		strcat(rule_item,")");
+
+		strcat(bfp,rule_item);
+	}
 	printf("bfp [%s] \n",bfp);
+
+
+
+
 
 	json_Delete(polic_info);
 

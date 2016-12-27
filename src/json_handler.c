@@ -155,7 +155,24 @@ int json_getBool(JSON_INFO *info, char *key)
     }
 }
 
+int json_getArraySize(JSON_INFO *info,char *key)
+{
 
+	cJSON *array;
+	int size = 0;
+	if(key != NULL)	//get child array
+	{
+		array = cJSON_GetObjectItem(info->root,key);
+		size = cJSON_GetArraySize(array);
+
+	}else	//get current array
+	{
+		size = cJSON_GetArraySize(info->root);
+	}
+
+
+	return size;
+}
 
 
 
