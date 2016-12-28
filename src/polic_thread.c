@@ -57,7 +57,7 @@ void *polic_thread(void *arg)
 	listen_sock = mite_sock_createListenSocket(ip,port);
 	if(listen_sock <0)
 	{
-		printf("Create polic listensocket error.\n");
+		fprintf(stderr,"Create polic listensocket error.\n");
 		pthread_exit(NULL);
 	}
 
@@ -66,7 +66,9 @@ void *polic_thread(void *arg)
 	
 	
 	// [2] start a loop to receive polic
-	printf("[Polic Thread]================>\n");
+	if(g_debug){
+		printf("[Polic Thread]================>\n");
+	}
 	while(1)
 	{
 		if((client_sock = accept(listen_sock,NULL,NULL))== -1) {
@@ -103,7 +105,8 @@ int polic_prase(int sockfd)
 		return -1;
 	}
 
-	printf("read data:%s\n",data);
+	if(g_debug)
+		printf("read data:%s\n",data);
 
 	//解析json格式的策略文件
 	JSON_INFO *polic_info = NULL;
@@ -111,7 +114,8 @@ int polic_prase(int sockfd)
 	polic_info = json_ParseString(data);
 	if(polic_info == NULL)
 	{
-		printf("prase json error.\n");
+		if(g_debug)
+			printf("prase json error.\n");
 		return -2;
 	}
 
@@ -142,7 +146,8 @@ int polic_prase(int sockfd)
 
 		move_string_common(host);
 		move_string_common(port);
-		printf("--------------> [%s:%s]\n",host,port);
+		if(g_debug)
+			printf("--------------> [%s:%s]\n",host,port);
 
 		if(i != 0)
 			strcat(rule_item," or ");
@@ -161,7 +166,8 @@ int polic_prase(int sockfd)
 
 		strcat(bfp,rule_item);
 	}
-	printf("bfp [%s] \n",bfp);
+	if(g_debug)
+		printf("bfp [%s] \n",bfp);
 
 
 

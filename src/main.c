@@ -120,8 +120,9 @@ int main(int argc,char *argv[])
 	}
 	if(1)
 	{
-		printf("polic address :%s:%d\n",polic_ip,polic_port);
-		printf("report address :%s:%d\n",report_ip,report_port);
+		printf("Prgress run with config:\n");
+		printf("# polic  address : %s:%d\n",polic_ip,polic_port);
+		printf("# report address : %s:%d\n",report_ip,report_port);
 	}
 
 	
@@ -145,7 +146,7 @@ int main(int argc,char *argv[])
 	g_info = (prog_info_t *)malloc(sizeof(prog_info_t));
 	if(g_info == NULL)
 	{
-		printf("Init global info error.\n");
+		fprintf(stderr,"Init global info error.\n");
 		exit(-1);
 	}
 	g_info->isset = 0;
@@ -171,9 +172,9 @@ int main(int argc,char *argv[])
 		strcpy(p_info->polic_ip,polic_ip);
 		p_info->polic_port=polic_port;
 		if(pthread_create(&polic_tid,NULL,polic_thread,(void *)p_info))
-		if(0)
 		{
-			perror("[ERROR] pthread create config Fail.");
+			if(g_debug)
+				perror("[ERROR] pthread create config Fail.");
 		}
 	}
 
@@ -181,7 +182,8 @@ int main(int argc,char *argv[])
 	while(1)
 	{
 		sleep(5);
-		printf("wait_polic--->\n");
+		if(g_debug)
+			printf("wait_polic--->\n");
 		if(check_polic_ready())
 			break;
 	}
@@ -197,7 +199,9 @@ int main(int argc,char *argv[])
 
 		if(pthread_create(&report_tid,NULL,report_thread,(void *)r_info))
 		{
-			perror("[ERROR] pthread create report Fail.");
+			if(g_debug){
+				perror("[ERROR] pthread create report Fail.");
+			}
 		}
 
 	}
@@ -226,8 +230,9 @@ int main(int argc,char *argv[])
 
 	while(1)
 	{
-		sleep(5);
-		printf("[Main Thread]----------------->\n");
+		sleep(2);
+		if(g_debug)
+			printf("[Main Thread]----------------->\n");
 		/*
 		tmp = new_net_buff(buff_size);
 		if(tmp != NULL)
@@ -241,7 +246,9 @@ int main(int argc,char *argv[])
 		}
 		*/
 		get_polic(polic);
-		printf("get polic [%s]\n");
+		if(g_debug) {
+			printf("[MAIN] capture loop get polic [%s]\n");
+		}
 		mt_pcap_capture(device,polic);
 
 		

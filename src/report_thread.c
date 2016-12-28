@@ -58,7 +58,8 @@ void *report_thread(void *arg)
 		// [1] Create a tcp client to server
 		if(remote_sock <=0 ){
 			remote_sock = mite_sock_openSocketByTimeout(ip,port,DF_TIMEOUT);
-			printf("open remote[%s:%d] socket %d\n",ip,port,remote_sock);
+			if(g_debug)
+				printf("open remote[%s:%d] socket %d\n",ip,port,remote_sock);
 			if(remote_sock == -3)
 				sleep(DF_TIMEOUT);
 			continue;
@@ -87,22 +88,26 @@ void *report_thread(void *arg)
 		{
 			struct mt_pkthdr *mtpkt;
 			mtpkt = (struct mt_pkthdr *)(current_pack->buff);
-			printf("version :%02x\n",mtpkt->version);
-			printf("total_len :%04x\n",mtpkt->total_len);
-			printf("src :%08x\n",mtpkt->src_ip);
-			printf("src_port :%0tx\n",mtpkt->src_port);
-			printf("timestamp : %d\n",mtpkt->timestamp);
+			if(g_debug){
+				printf("version :%02x\n",mtpkt->version);
+				printf("total_len :%04x\n",mtpkt->total_len);
+				printf("src :%08x\n",mtpkt->src_ip);
+				printf("src_port :%0tx\n",mtpkt->src_port);
+				printf("timestamp : %d\n",mtpkt->timestamp);
+			}
 
 		}
 
 		// ---------------- send --------------------------
 
-		printf("write to reomot %d bytes\n",current_pack->size);
+		if(g_debug)
+			printf("write to reomot %d bytes\n",current_pack->size);
 		ret = mite_sock_writeWithTimeout(remote_sock,current_pack->buff,current_pack->size,DF_TIMEOUT);
 
 		if(ret != 0)	//handle error
 		{	
-			printf("Close it \n");
+			if(g_debug)
+				printf("Close it \n");
 			close(remote_sock);
 			remote_sock = -1;
 		}
