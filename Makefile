@@ -10,6 +10,9 @@ LDFLAGS+= -lpcap
 CFLAGS+=-I./inc
 CFLAGS+=-I./include
 
+#fix deabin
+CFLAGS+=-D_BSD_SOURCE
+
 # exteral package
 #CFLAGS+=-I./inc/xml
 CFLAGS+=-I./inc/json

@@ -190,8 +190,13 @@ net_buff_t *parse_pkt(const struct pcap_pkthdr* pkthdr, const u_char* packet)
 		//取出TCP头，截取源端口，目标端口
 		if (ipHeader->ip_p == IPPROTO_TCP) {
 			tcpHeader = (struct tcphdr*)(packet + sizeof(struct ether_header) + sizeof(struct ip));
+#ifdef __FAVOR_BSD
+			sourcePort = ntohs(tcpHeader->th_sport);
+			destPort = ntohs(tcpHeader->th_dport);
+#else
 			sourcePort = ntohs(tcpHeader->source);
 			destPort = ntohs(tcpHeader->dest);
+#endif
 
 			//只取应用数据
 			if((tcpHeader->th_flags & TH_PUSH)) {
@@ -215,9 +220,14 @@ net_buff_t *parse_pkt(const struct pcap_pkthdr* pkthdr, const u_char* packet)
 					mt_hd.version = MT_VERSION;
 					mt_hd.total_len = pkthdr->len+21;
 					mt_hd.src_ip = inet_addr(sourceIp);
+#ifdef __FAVOR_BSD
+					mt_hd.src_port = tcpHeader->th_sport;
+					mt_hd.dst_port = tcpHeader->th_dport;
+#else
 					mt_hd.src_port = tcpHeader->source;
-					mt_hd.dst_ip = inet_addr(destIp);
 					mt_hd.dst_port = tcpHeader->dest;
+#endif
+					mt_hd.dst_ip = inet_addr(destIp);
 					mt_hd.timestamp = pkthdr->ts.tv_sec;
 
 
