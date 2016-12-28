@@ -10,6 +10,7 @@
 #include <sys/un.h>
 #include <sys/errno.h>
 #include <string.h>
+#include <getopt.h>
 
 #include <pthread.h>
 #include <signal.h>
@@ -23,8 +24,11 @@
 #include "polic_thread.h"
 
 #include "handler_packet.h"
+#include "daemon.h"
 
 #define DEFAULT_CONFIG_FILE	"/root/Github/WORK/Flow-classification/etc/flow_cfg.json"
+
+#define PID_FILE	"/tmp/flow-pid.pid"
 
 
 //char *log_path="/tmp/dlp.log";					//用于发送报警信息的RabbitMQ
@@ -45,16 +49,46 @@ net_buff_queue_t *g_net_queue;
 prog_info_t		 *g_info = NULL;
 
 
+int g_debug =0;
+
 int main(int argc,char *argv[])
 {
 	//init pararms 读取配置文件
+	char config_file[64] = {0};
+	int daemon = 1;		//默认daemon运行且单实例
+	int only_one = 1;
+	int opt;
+	while((opt = getopt(argc,argv,"c:ndm")) != -1 ){
+		switch(opt){
+			case 'c':
+				strcpy(config_file,optarg);
+				break;
+			case 'n':
+				daemon = 0;
+				break;
+			case 'm':
+				only_one = 0;
+				break;
+			case 'd':
+				g_debug = 1;
+				//daemon = 0;
+				//only_one = 0;
+				break;
+			case '?':
+				fprintf(stderr,"unknow opt for this process.\n");
+				return 1;
+			default:
+				break;
+		}
+	}
+
 	signal(SIGPIPE,SIG_IGN);
 
 
 #if 1
 	JSON_INFO *cfg_info = NULL;
-	if(argc >=2)
-		cfg_info = json_ParseFile(argv[1]);
+	if(strlen(config_file) > 2)
+		cfg_info = json_ParseFile(config_file);
 	else
 		cfg_info = json_ParseFile(DEFAULT_CONFIG_FILE);
 		
@@ -94,6 +128,19 @@ int main(int argc,char *argv[])
 	json_Delete(cfg_info);
 
 #endif
+	if(daemon){
+		daemonize_user();
+	}
+
+	if(only_one){
+		if(already_running(PID_FILE)){
+			fprintf(stderr,"The Process [%s] already running .\n",argv[0]);
+			exit(-1);
+		}
+	}
+
+
+
 	//创建一个全局的数据结构用于保存抓包策略
 	g_info = (prog_info_t *)malloc(sizeof(prog_info_t));
 	if(g_info == NULL)
