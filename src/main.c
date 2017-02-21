@@ -67,6 +67,7 @@ int main(int argc,char *argv[])
 {
 	//init pararms 读取配置文件
 	char config_file[64] = {0};
+	char polic_file[64] = {0};
 	int daemon = 1;		//默认daemon运行且单实例
 	int only_one = 1;
 	int opt;
@@ -74,6 +75,9 @@ int main(int argc,char *argv[])
 		switch(opt){
 			case 'c':
 				strcpy(config_file,optarg);
+				break;
+			case 'p':
+				strcpy(polic_file,optarg);
 				break;
 			case 'n':
 				daemon = 0;
@@ -196,6 +200,8 @@ int main(int argc,char *argv[])
 	//等待接收到配置策略
 	while(1)
 	{
+		if(prase_polic_file(polic_file) == 0)
+			break;
 		sleep(5);
 		if(g_debug)
 			printf("wait_polic--->\n");

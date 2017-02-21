@@ -9,5 +9,6 @@ typedef struct _polic_thread_info{
 
 void *polic_thread(void *arg);
 
+int prase_polic_file(char *polic_file);
 
 #endif /* POLIC_THREAD_H */

@@ -182,6 +182,91 @@ int polic_prase(int sockfd)
 	return 0;	
 }
 
+
+int prase_polic_file(char *polic_file)
+{
+	char src_ip[32] = {0};
+	char src_port[32] = {0};
+	char dst_ip[32] = {0};
+	char dst_port[32] = {0};
+
+	char host[32] = {0};
+	char port[32] = {0};
+
+	char bfp[64] = {0};
+
+	int ret;
+
+	//解析json格式的策略文件
+	JSON_INFO *polic_info = NULL;
+
+	polic_info = json_ParseFile(polic_file);
+	if(polic_info == NULL)
+	{
+		if(g_debug)
+			printf("prase json error.\n");
+		return -2;
+	}
+
+	//json_Print(polic_info);
+
+
+	cJSON *polic = cJSON_GetObjectItem(polic_info->root,"polic");
+	if(polic == NULL) {
+		return -3;
+	}
+	int polic_size = 0;
+	polic_size = cJSON_GetArraySize(polic);
+	if(polic_size <= 0){
+		return -4;
+	}
+	int i ;
+	for(i = 0; i < polic_size;i++)
+	{
+		char rule_item[64] = {0};
+		cJSON *item = cJSON_GetArrayItem(polic,i);
+		cJSON *json_host;
+		cJSON *json_port;
+		json_host = cJSON_GetObjectItem(item,"host");
+		json_port = cJSON_GetObjectItem(item,"port");
+
+		strcpy(host,cJSON_Print(json_host));
+		strcpy(port,cJSON_Print(json_port));
+
+		move_string_common(host);
+		move_string_common(port);
+		if(g_debug)
+			printf("--------------> [%s:%s]\n",host,port);
+
+		if(i != 0)
+			strcat(rule_item," or ");
+		strcat(rule_item,"(");
+		if(strlen(host) >=4)
+		{
+			strcat(rule_item,"host ");
+			strcat(rule_item,host);
+		}
+		if(atoi(port) > 0 && atoi(port) < 65535)
+		{
+			strcat(rule_item," and port ");
+			strcat(rule_item,port);
+		}
+		strcat(rule_item,")");
+
+		strcat(bfp,rule_item);
+	}
+	if(g_debug)
+		printf("bfp [%s] \n",bfp);
+
+	json_Delete(polic_info);
+
+	//updata BPF;
+	update_bpf(bfp);
+
+	return 0;
+}
+
+
 int update_bpf(char *updata)
 {
 
