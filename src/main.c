@@ -51,6 +51,18 @@ prog_info_t		 *g_info = NULL;
 
 int g_debug =0;
 
+static void print_help()
+{
+	printf("--usage:--\n");
+	printf("-- build time:%s--%s\n",__TIME__,__DATE__);
+	printf("-c config file\n");
+	printf("-p polic file\n");
+	printf("-n no daemon\n");
+	printf("-m allow multi-worker\n");
+	printf("-d debug mode\n");
+	printf("-h print help\n");
+}
+
 int main(int argc,char *argv[])
 {
 	//init pararms 读取配置文件
@@ -58,7 +70,7 @@ int main(int argc,char *argv[])
 	int daemon = 1;		//默认daemon运行且单实例
 	int only_one = 1;
 	int opt;
-	while((opt = getopt(argc,argv,"c:ndm")) != -1 ){
+	while((opt = getopt(argc,argv,"c:p:ndmh")) != -1 ){
 		switch(opt){
 			case 'c':
 				strcpy(config_file,optarg);
@@ -74,8 +86,11 @@ int main(int argc,char *argv[])
 				//daemon = 0;
 				//only_one = 0;
 				break;
+			case 'h':
+				print_help();
+				return 1;
 			case '?':
-				fprintf(stderr,"unknow opt for this process.\n");
+				print_help();
 				return 1;
 			default:
 				break;
