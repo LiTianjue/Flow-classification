@@ -185,6 +185,9 @@ int polic_prase(int sockfd)
 
 int prase_polic_file(char *polic_file)
 {
+	if(strlen(polic_file)< 2)
+		return -1;
+
 	char src_ip[32] = {0};
 	char src_port[32] = {0};
 	char dst_ip[32] = {0};
