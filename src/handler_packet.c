@@ -218,7 +218,11 @@ net_buff_t *parse_pkt(const struct pcap_pkthdr* pkthdr, const u_char* packet)
 					struct mt_pkthdr mt_hd;
 
 					mt_hd.version = MT_VERSION;
+#ifdef CSTYLE_ENDING
 					mt_hd.total_len = pkthdr->len+21;
+#else
+					mt_hd.total_len = htons(pkthdr->len+21);
+#endif
 					mt_hd.src_ip = inet_addr(sourceIp);
 #ifdef __FAVOR_BSD
 					mt_hd.src_port = tcpHeader->th_sport;
@@ -245,7 +249,12 @@ net_buff_t *parse_pkt(const struct pcap_pkthdr* pkthdr, const u_char* packet)
 						return ret;
 
 					sprintf(ret->buff,"hello [%d]\n", pkthdr->len);
+#ifdef CSTYLE_ENDING
 					u_int16_t data_len = pkthdr->len;
+#else
+					u_int16_t data_len_n = pkthdr->len;
+					u_int16_t data_len = htons(data_len_n);
+#endif
 
 					//组装数据包
 					memcpy(ret->buff,&mt_hd,sizeof(mt_hd));
