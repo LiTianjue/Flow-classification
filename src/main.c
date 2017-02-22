@@ -26,7 +26,7 @@
 #include "handler_packet.h"
 #include "daemon.h"
 
-#define DEFAULT_CONFIG_FILE	"/root/Github/WORK/Flow-classification/etc/flow_cfg.json"
+#define DEFAULT_CONFIG_FILE	"/etc/flow_cfg.json"
 
 #define PID_FILE	"/tmp/flow-pid.pid"
 
