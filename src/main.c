@@ -268,7 +268,7 @@ int main(int argc,char *argv[])
 		*/
 		get_polic(polic);
 		if(g_debug) {
-			printf("[MAIN] capture loop get polic [%s]\n");
+			printf("[MAIN] capture loop get polic [%s]\n",polic);
 		}
 		mt_pcap_capture(device,polic);
 
