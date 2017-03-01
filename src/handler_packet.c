@@ -232,7 +232,11 @@ net_buff_t *parse_pkt(const struct pcap_pkthdr* pkthdr, const u_char* packet)
 					mt_hd.dst_port = tcpHeader->dest;
 #endif
 					mt_hd.dst_ip = inet_addr(destIp);
+#ifdef CSTYLE_ENDING
 					mt_hd.timestamp = pkthdr->ts.tv_sec;
+#else
+					mt_hd.timestamp = htonl(pkthdr->ts.tv_sec);
+#endif
 
 
 					//printf("sizeof mt_hd is [%d] %02x %d\n ,",sizeof(mt_hd),mt_hd.version,mt_hd.total_len);
